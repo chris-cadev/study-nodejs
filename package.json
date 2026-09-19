@@ -1,0 +1,13 @@
+{
+  "name": "study-nodejs-clusters-workers",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Gu\u00eda intensiva Node.js Clusters + Worker Threads \u2014 6h, 6 branches",
+  "scripts": {
+    "test": "node --test",
+    "test:all": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
