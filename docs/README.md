@@ -51,8 +51,14 @@ quadrantChart
 - **Regresión opcional:** `npm run test:all` → `node --test` (todos los tests acumulados hasta ese branch). Úsalo al final del día o en CI para verificar que no rompiste lo anterior.
 - **GitHub Actions:** `verify.yml` corre `npm test` (aislado) en cada push/PR — verde significa que completaste el ejercicio de ese branch, no que todo el repo está verde. Para CI completo cambia a `npm run test:all` si prefieres.
 
-## Branches `_resolved` — ¿son necesarios?
+## ¿Dónde está la solución? (sin branches `_resolved`)
 
-- **No estrictamente:** cada `02` ya contiene la solución de `01` (porque `02` está basado en `01_resolved`), así que `git diff 01..02` o `git show 01_resolved:src/...` ya te da la respuesta. Con tests aislados, el siguiente branch no necesita re-ejecutar los tests del anterior.
-- **Cuándo sí ayudan:** como **chuleta oculta** sin avanzar de hora: `git switch 01_modelo-cluster_resolved` → ves la solución completa sin hacer `02`. Son branches `hidden` (no listados en el README principal, solo en `git branch --all` y en este doc). Si prefieres repo minimal, puedes borrarlos con `git update-ref -d refs/heads/01_modelo-cluster_resolved` — el historial de soluciones queda en `02..06` de todos modos.
-- **Recomendación para enseñanza:** mantenerlos ocultos (como ahora) — menos es más para el estudiante, pero el docente tiene la respuesta a mano sin reescribir.
+- **Branches `_resolved` eliminados** como pediste: ya no hay `01_modelo-cluster_resolved`. La solución de `01` vive en el **siguiente branch** `02` (porque `02` está basado en el commit que resolvía `01`). Con tests aislados, no necesitas re-ejecutar lo anterior.
+- **Cómo ver la solución sin avanzar de hora:**
+  ```bash
+  git diff 01_modelo-cluster..02_cluster-produccion -- src/cluster-hello.js
+  # o el commit intermedio que resolvía 01 (aún en historial):
+  git log --all --oneline --grep="01.*resolv"  # muestra a9ecbcd
+  git show a9ecbcd:src/cluster-hello.js
+  ```
+- **Recomendación:** si prefieres chuleta explícita, puedes recrear `_resolved` con `git switch -c 01_modelo-cluster_resolved 02_cluster-produccion^` — pero para enseñanza, menos branches = menos ruido (decisión tomada: repo minimal con 7 branches).
