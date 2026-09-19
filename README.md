@@ -35,10 +35,12 @@ Cada branch tiene **su propio `package.json`** (heredado + scripts añadidos). V
 
 ## TDD / PR automatizado
 
-- Cada branch trae `test/*.test.js` que falla hasta que completes el `// TODO` en `src/`.
+- Cada branch trae `test/*.test.js` que falla hasta que completes el `// TODO` en `src/` (`npm test` aislado → solo ese branch, `npm run test:all` → todo).
 - Local: `npm test` (usa `node --test` nativo, sin deps).
 - Remoto: al hacer `push` o abrir PR (`01 → 02`, `02 → 03`, ... o `NN → main`), GitHub Actions corre `verify.yml` y marca ✅/❌.
 - Flujo sugerido: completa hora `NN` → `git commit` → `git push -u origin NN_titulo` → abre PR a `NN+1` → verifica verde → merge → `git switch NN+1`.
+
+> **Guiño 😉 — ¿atascado?** No hay branches `_resolved` visibles (se borraron a propósito). La solución está escondida en el siguiente branch: `git diff 01_modelo-cluster..02_cluster-produccion -- src/cluster-hello.js` o `git log --all --oneline --grep="resolv"` → `git show <hash>:src/...`. Ver `docs/README.md:54` para la chuleta completa sin hacer trampa antes de intentar.
 
 ## Flashcards → Quizlet
 

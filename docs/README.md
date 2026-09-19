@@ -62,3 +62,27 @@ quadrantChart
   git show a9ecbcd:src/cluster-hello.js
   ```
 - **Recomendación:** si prefieres chuleta explícita, puedes recrear `_resolved` con `git switch -c 01_modelo-cluster_resolved 02_cluster-produccion^` — pero para enseñanza, menos branches = menos ruido (decisión tomada: repo minimal con 7 branches).
+
+### Guiño — cómo revisar la solución sin hacer trampa 😉
+
+> *Pista para curiosos:* cada `0N` está en rojo a propósito (TDD). Si te atascas, no abras el siguiente branch todavía — mira el historial con ojos de detective:
+
+```bash
+# 1. El siguiente branch ya esconde la respuesta (no necesitas _resolved)
+git diff 01_modelo-cluster..02_cluster-produccion -- src/cluster-hello.js | head -40
+
+# 2. El commit que resolvía 01 sigue ahí, aunque la rama se borró
+git log --all --oneline --grep="resolv"  # ← guiño: busca "resolv"
+# a9ecbcd 01_modelo-cluster_resolved — solución completa cluster hello (oculto)
+git show a9ecbcd --stat                  # qué tocó la solución
+git show a9ecbcd:src/cluster-hello.js    # la solución sin cambiar de branch
+
+# 3. Para comparar tu intento con la solución sin moverte:
+git diff HEAD -- src/cluster-hello.js    # tu avance
+git diff HEAD..a9ecbcd -- src/cluster-hello.js  # lo que te falta
+
+# 4. ¿Quieres la chuleta como branch de nuevo? Recréala al vuelo:
+git switch -c 01_modelo-cluster_resolved a9ecbcd  # guiño: aún existe, solo sin nombre
+```
+
+> Diátaxis diría: esto es **Reference** para el docente, no para el estudiante en modo Tutorial. Si estás en `01` aprendiendo, evita el guiño hasta que `npm test` te haya dicho 2-3 veces que no. El siguiente branch `02` ya te dará la solución de todas formas cuando avances — la trampa está en mirar antes de intentarlo.
