@@ -2,7 +2,7 @@
 
 > **Diátaxis: Reference** · *information-oriented* · Sin pasos, sin historia, sin opiniones. Datos exactos, ordenados, exhaustivos. Si buscas aprender paso a paso → Tutorials `01`, `03`, `04`; si buscas entender por qué → `cluster-vs-worker.md` (Explanation); si buscas resolver tarea → `02`, `simulacro.md` (How-to).
 
-**Versión:** Node 20+ · `isPrimary` (no `isMaster`, deprecado v16) · `availableParallelism()` preferido a `cpus().length`.
+**Versión:** Node 22+ (LTS Jod, Maintenance) / 24+ (LTS Krypton, Active) / 26 Current · `isPrimary` (no `isMaster`, deprecado v16, EOL Node 20 en 2026-04-30) · `availableParallelism()` preferido a `cpus().length` (estable desde Node 19, recomendado en docs 22/24/26).
 
 ## Cluster — API mínima
 
