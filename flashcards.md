@@ -5,21 +5,22 @@
 
 ## Nivel Bajo — Para no técnicos / intuición
 
-[Bajo] ¿Cómo explicarías “graceful shutdown” a alguien no técnico?	Como cerrar una tienda sin echar a los clientes que ya están dentro: atiendes a los que entraron, no dejas entrar a más, y luego bajas la persiana.
-[Bajo] ¿Qué es un healthcheck `/health` en analogía?	Como el cartel “ABIERTO” en la puerta: si lo quitas, el centro comercial (K8s) deja de mandar gente a esa tienda.
-[Bajo] ¿Por qué guardar sesiones en memoria es frágil con varias cocinas (workers)?	Cada cocina tiene su libreta; si vuelves y te atiende otra cocina, no encuentra tu pedido → necesitas libreta central (Redis).
+[Bajo] ¿Cómo explicarías Worker Threads a alguien no técnico?	Como tener ayudantes en la misma cocina (mismo local) que amasan a mano sin bloquear al cocinero principal que atiende pedidos.
+[Bajo] ¿Qué problema resuelve Worker Threads en una frase?	Que una tarea pesada (como calcular mucho) no congele toda la tienda; el ayudante la hace en paralelo y avisa cuando termina.
+[Bajo] ¿Cuál es la diferencia entre proceso y hilo en analogía?	Proceso = local separado con su cocina; hilo = ayudante en el mismo local compartiendo mesa y herramientas.
+[Bajo] ¿Qué pasa si no usas Worker para una tarea pesada?	Toda la tienda se pausa — nadie puede pedir hasta que termines de amasar.
 
 ## Nivel Medio — Entrevista técnica
 
-[Medio] ¿Qué hace `server.close()` en graceful shutdown?	Deja de aceptar conexiones nuevas pero deja terminar las existentes; luego `process.exit(0)`. Sin esto, `kill` corta a mitad y da 502.
-[Medio] ¿Cómo implementas graceful en Node con cluster?	Worker: `process.on('SIGTERM', () => server.close(() => process.exit(0)))` y `SIGINT`; Primary: `cluster.on('exit', () => cluster.fork())` para reponer.
-[Medio] ¿Qué responde `GET /health` y para qué sirve?	`{status:'ok', pid}` con 200. Lo usa K8s/PM2 para saber si el worker está vivo y sacarlo del balanceo si falla.
-[Medio] ¿PM2 ` -i max` vs `cluster` nativo vs K8s replicas?	`cluster` nativo = demo/control total; PM2 `-i max` = prod en 1 VM con reload/monitor; K8s replicas = 1 proceso por pod + HPA, no uses cluster dentro del container.
-[Medio] ¿Cuándo usarías PM2 y cuándo K8s?	VM sin orquestador → PM2; K8s/ECS → Deployment replicas; entrevista/demo → cluster nativo.
+[Medio] ¿Cuándo usarías `worker_threads` vs `cluster`?	`worker_threads` para CPU-bound (crypto, parse, fib) sin bloquear EventLoop; `cluster` para escalar I/O-bound (API) con procesos. Hilo vs proceso.
+[Medio] ¿Qué hacen `isMainThread`, `parentPort`, `workerData` y `Worker`?	`isMainThread` dice si estás en el hilo principal; `parentPort.postMessage` responde al padre; `workerData` es el dato clonado que recibe el worker; `new Worker(file, {workerData})` lo crea.
+[Medio] ¿Cómo se comunican main y worker?	Por mensajes: main hace `new Worker` y escucha `w.on('message', ...)`, worker hace `parentPort.postMessage(result)`. Datos se clonan (structured clone), no por referencia.
+[Medio] ¿`workerData` se comparte o se clona?	Se clona. Para compartir memoria real necesitas `SharedArrayBuffer` + `Atomics`, no es automático.
+[Medio] ¿Qué significa `w.on('error')` y `w.on('exit')`?	`error` captura throw dentro del worker; `exit` con código ≠0 indica fallo. Sin `on('error')`, el fallo se silencia.
 
 ## Nivel Alto — Profundo / Troubleshooting
 
-[Alto] ¿Qué pasa si no manejas `SIGTERM`/`SIGINT` en worker?	Deploy/reload corta requests en vuelo → `ECONNRESET`/502. En K8s el flujo es `SIGTERM → 30s grace → SIGKILL`, debes drenar y cerrar DB/Redis con timeout de 10s.
-[Alto] ¿Por qué `visits` en memoria no suma global con cluster?	Cada worker tiene su heap aislado; `let visits=0` cuenta por worker, round-robin da 1,1,2,1 en lugar de 1,2,3,4 → externaliza a Redis.
-[Alto] ¿Qué es sticky sessions y cuándo lo necesitas?	Con WebSocket/Socket.io, round-robin rompe la conexión stateful; necesitas sticky (mismo cliente → mismo worker) o Redis adapter.
-[Alto] ¿Por qué es anti-patrón PM2 dentro de Docker en K8s?	Tres supervisores compiten (cluster + PM2 + K8s kubelet) — complejidad, logs duplicados, healthchecks confusos. Estándar 2025: 1 proceso por pod, escala con `replicas`.
+[Alto] ¿Qué trade-off introduce worker_threads?	+ No bloquea loop, hilos ligeros, − complejidad, compartir memoria con cuidado, crear un Worker por request excede beneficio → usa pool.
+[Alto] ¿Por qué `hashSync` bloquea pero `hashInWorker` no?	`hashSync` corre en el EventLoop principal; `hashInWorker` lo mueve a otro hilo, el loop sigue atendiendo `setInterval`/`request`.
+[Alto] ¿Qué pasa si olvidas `parentPort.postMessage` en el worker?	El `Promise` en main nunca resuelve → timeout. El test `worker duplica` falla.
+[Alto] ¿Worker Threads vs `child_process`?	`worker_threads` = hilos mismo proceso, memoria compartible, ideal CPU; `child_process` = procesos separados, memoria aislada, ideal para jobs heterogéneos (ej. un job + una API).
