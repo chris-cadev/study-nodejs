@@ -5,22 +5,21 @@
 
 ## Nivel Bajo — Para no técnicos / intuición
 
-[Bajo] ¿Cómo explicarías Worker Threads a alguien no técnico?	Como tener ayudantes en la misma cocina (mismo local) que amasan a mano sin bloquear al cocinero principal que atiende pedidos.
-[Bajo] ¿Qué problema resuelve Worker Threads en una frase?	Que una tarea pesada (como calcular mucho) no congele toda la tienda; el ayudante la hace en paralelo y avisa cuando termina.
-[Bajo] ¿Cuál es la diferencia entre proceso y hilo en analogía?	Proceso = local separado con su cocina; hilo = ayudante en el mismo local compartiendo mesa y herramientas.
-[Bajo] ¿Qué pasa si no usas Worker para una tarea pesada?	Toda la tienda se pausa — nadie puede pedir hasta que termines de amasar.
+[Bajo] ¿Cómo explicarías el pool de Workers a alguien no técnico?	Como tener 4 ayudantes fijos en la cocina en lugar de contratar uno nuevo por cada pedido; los reutilizas y no pagas el coste de buscar y formar cada vez.
+[Bajo] ¿Por qué crear un Worker por pedido es caro?	Contratar y formar a alguien para un solo plato y despedirlo enseguida — pierdes tiempo y dinero; mejor tener equipo fijo.
+[Bajo] ¿Qué hace un pool en una frase?	Mantiene N ayudantes listos (N = cores) y les reparte tareas sin crear/destruir hilos cada vez.
 
 ## Nivel Medio — Entrevista técnica
 
-[Medio] ¿Cuándo usarías `worker_threads` vs `cluster`?	`worker_threads` para CPU-bound (crypto, parse, fib) sin bloquear EventLoop; `cluster` para escalar I/O-bound (API) con procesos. Hilo vs proceso.
-[Medio] ¿Qué hacen `isMainThread`, `parentPort`, `workerData` y `Worker`?	`isMainThread` dice si estás en el hilo principal; `parentPort.postMessage` responde al padre; `workerData` es el dato clonado que recibe el worker; `new Worker(file, {workerData})` lo crea.
-[Medio] ¿Cómo se comunican main y worker?	Por mensajes: main hace `new Worker` y escucha `w.on('message', ...)`, worker hace `parentPort.postMessage(result)`. Datos se clonan (structured clone), no por referencia.
-[Medio] ¿`workerData` se comparte o se clona?	Se clona. Para compartir memoria real necesitas `SharedArrayBuffer` + `Atomics`, no es automático.
-[Medio] ¿Qué significa `w.on('error')` y `w.on('exit')`?	`error` captura throw dentro del worker; `exit` con código ≠0 indica fallo. Sin `on('error')`, el fallo se silencia.
+[Medio] ¿Por qué no crear un `new Worker` por request?	Overhead de crear hilo (memoria, V8) excede beneficio si son muchas tareas cortas — docs oficiales dicen “use a pool”.
+[Medio] ¿Qué es `piscina` / `tinypool` y cuándo usarlos?	`piscina` (5k★, configurable min/max) y `tinypool` (fork minimal 38KB para Vitest, 12M descargas) — pools prod que evitan crear Worker por request, con N = availableParallelism().
+[Medio] ¿Cómo funciona `SimplePool` del repo?	Crea `new Worker(url, {workerData})` por tarea y resuelve con `w.on('message')`, luego `w.terminate()`. Versión simple sin queue; prod usa `piscina` con `maxQueue`.
+[Medio] ¿Qué es `availableParallelism()` vs `cpus().length` para pool size?	Igual que en cluster: `availableParallelism()` respeta cgroups/K8s limits, `cpus().length` miente en containers.
+[Medio] ¿Cuándo usarías pool vs `new Worker` puntual?	Muchas tareas CPU cortas → pool N=cpus; 1 tarea larga puntual → `new Worker` directo.
 
 ## Nivel Alto — Profundo / Troubleshooting
 
-[Alto] ¿Qué trade-off introduce worker_threads?	+ No bloquea loop, hilos ligeros, − complejidad, compartir memoria con cuidado, crear un Worker por request excede beneficio → usa pool.
-[Alto] ¿Por qué `hashSync` bloquea pero `hashInWorker` no?	`hashSync` corre en el EventLoop principal; `hashInWorker` lo mueve a otro hilo, el loop sigue atendiendo `setInterval`/`request`.
-[Alto] ¿Qué pasa si olvidas `parentPort.postMessage` en el worker?	El `Promise` en main nunca resuelve → timeout. El test `worker duplica` falla.
-[Alto] ¿Worker Threads vs `child_process`?	`worker_threads` = hilos mismo proceso, memoria compartible, ideal CPU; `child_process` = procesos separados, memoria aislada, ideal para jobs heterogéneos (ej. un job + una API).
+[Alto] ¿Qué trade-off introduce un pool?	+ Reutiliza hilos, − complejidad, memory sharing con cuidado, `maxThreads`/`maxQueue` mal configurados causan thrashing o cola infinita.
+[Alto] ¿Qué pasa si olvidas `w.terminate()` en SimplePool?	Fuga de hilos — cada `run` deja un Worker vivo, memoria crece y `getPoolSize()` miente.
+[Alto] ¿Cómo probar que `fibInWorker` no bloquea?	`setInterval(()=>process.stdout.write('tick '),100)` mientras haces `hashSync` (pausa ticks) vs `hashInWorker` (ticks siguen).
+[Alto] ¿Qué librería recomiendas en entrevista y por qué?	`piscina` si necesitas control fino, `tinypool` si quieres minimal (usada por Vitest) — ambas evitan el anti-patrón de Worker por request.
