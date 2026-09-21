@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Gu\u00eda intensiva Node.js Clusters + Worker Threads \u2014 6h, 6 branches",
   "scripts": {
-    "test": "node --test",
+    "test": "node --test test/01-cluster.test.js",
     "test:all": "node --test"
   },
   "engines": {
