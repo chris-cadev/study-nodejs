@@ -1,0 +1,14 @@
+{
+    "github.copilot.enable": { "*": false },
+    "editor.inlineSuggest.enabled": false,
+    "editor.suggestOnTriggerCharacters": false,
+    "editor.quickSuggestions": { "other": false, "comments": false, "strings": false },
+    "editor.acceptSuggestionOnCommitCharacter": false,
+    "editor.wordBasedSuggestions": "off",
+    "editor.parameterHints.enabled": false,
+    "editor.autoClosingBrackets": "always",
+    "editor.autoClosingQuotes": "always",
+    "chat.commandCenter.enabled": false,
+    "files.exclude": { "node_modules": true },
+    "search.exclude": { "node_modules": true }
+}

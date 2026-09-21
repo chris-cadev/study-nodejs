@@ -1,0 +1,12 @@
+{
+    "recommendations": [],
+    "unwantedRecommendations": [
+        "github.copilot",
+        "github.copilot-chat",
+        "codeium.codeium",
+        "tabnine.vscode-tabnine",
+        "amazonq.amazonaws-toolkit-vscode",
+        "openai.chatgpt",
+        "supermaven.supermaven"
+    ]
+}
