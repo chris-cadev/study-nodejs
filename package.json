@@ -4,8 +4,10 @@
   "type": "module",
   "description": "Gu\u00eda intensiva Node.js Clusters + Worker Threads \u2014 6h, 6 branches",
   "scripts": {
-    "test": "node --test test/01-cluster.test.js",
-    "test:all": "node --test"
+    "test": "node --test test/02-graceful.test.js",
+    "test:all": "node --test",
+    "start:cluster": "node src/cluster-hello.js",
+    "start:graceful": "node src/cluster-graceful.js"
   },
   "engines": {
     "node": ">=22"
