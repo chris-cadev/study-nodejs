@@ -5,22 +5,21 @@
 
 ## Nivel Bajo — Para no técnicos / intuición
 
-[Bajo] ¿Cómo explicarías “elegir entre cluster y worker” a alguien no técnico?	Como elegir entre abrir más sucursales (más locales) vs contratar ayudantes en la misma cocina: sucursales para más clientes, ayudantes para tareas pesadas.
-[Bajo] ¿Qué es un trade-off en una frase?	No hay gratis: ganas algo (más velocidad) pero pagas otra cosa (más memoria, más complejidad).
-[Bajo] ¿Por qué a veces “no hacer nada” es la mejor decisión?	Si una sola cocina ya atiende bien, abrir 7 más solo gasta luz y complica — a veces single-process es suficiente.
+[Bajo] ¿Cómo explicarías “simulacro de entrevista” a alguien no técnico?	Como ensayar una obra: practicas preguntas y respuestas en voz alta para que el día del estreno no te quedes en blanco.
+[Bajo] ¿Qué es una “respuesta de 30 segundos”?	Contar en 30s qué hace una tecnología como si se lo contaras a un compañero, sin leer documentación, con naturalidad.
+[Bajo] ¿Por qué practicar troubleshooting en voz alta?	Porque en entrevista no te piden código perfecto, sino que expliques cómo pensarías si algo se rompe.
 
 ## Nivel Medio — Entrevista técnica
 
-[Medio] ¿Árbol de decisión para cluster vs worker vs single?	¿Satura 1 core? No → single. Sí → ¿I/O (API) o CPU (cálculo)? I/O → cluster/PM2/K8s replicas; CPU → worker_threads (+ pool si muchas tareas).
-[Medio] ¿Cuándo elegirías `cluster` nativo vs PM2 vs K8s?	VM sin orquestador → PM2 `-i max`; K8s/ECS → 1 proceso por pod + HPA; demo/entrevista → `cluster` nativo.
-[Medio] ¿Qué es `SCHED_RR` vs `SCHED_NONE`?	`SCHED_RR` (default, Node reparte round-robin en primary), `SCHED_NONE` (deja al SO). En Windows cambia a RR cuando libuv lo soporte.
-[Medio] ¿Cuándo usarías pool vs `new Worker` puntual?	Muchas tareas CPU cortas → pool `N=availableParallelism()` (piscina/tinypool); 1 tarea larga → `new Worker` directo.
-[Medio] ¿Por qué no PM2 dentro de Docker en K8s?	Tres supervisores compiten (Node cluster + PM2 + kubelet) — logs duplicados, healthchecks confusos. Estándar: 1 proceso por pod.
+[Medio] ¿Cómo responderías “¿Qué es cluster?” en 30s?	Node usa 1 hilo/1 core; cluster crea 1 proceso por core que comparte puerto, Primary reparte con round-robin, si uno muere lo repone. En prod uso PM2 o K8s replicas.
+[Medio] ¿Cómo responderías “¿Cluster vs worker_threads?” en 30s?	Cluster = procesos aislados para escalar I/O; worker_threads = hilos mismo proceso para CPU con SharedArrayBuffer. I/O → cluster/PM2, CPU → worker.
+[Medio] ¿Cómo responderías “¿Graceful shutdown?” en 30s?	`SIGTERM → server.close(() => process.exit(0))` para drenar requests, Primary hace `cluster.on('exit', fork)` para reponer. En K8s: 30s grace.
+[Medio] ¿Cómo responderías “¿PM2 vs K8s?” en 30s?	PM2 `-i max` para 1 VM con reload; K8s replicas 1 proceso por pod con HPA para distribuido; no uses PM2 dentro de Docker en K8s.
+[Medio] ¿Cómo practicarías el simulacro del repo?	`git switch 06`, cronometra 30-60s por pregunta en `docs/simulacro.md`, di la respuesta sin mirar `respuestas-30s.md`, luego compara con “Modelo”.
 
 ## Nivel Alto — Profundo / Troubleshooting
 
-[Alto] ¿Qué trade-off introduce cluster que delata novato?	+ Throughput I/O, − N× RAM (V8 duplicado), sin estado compartido (sesiones → Redis), debugging N PIDs, necesita `SIGTERM→close` + `exit` handler.
-[Alto] ¿Qué trade-off introduce worker_threads?	+ No bloquea loop, hilos ligeros, − complejidad, `SharedArrayBuffer` solo con `Atomics`, `w.on('error')` silencia fallos, pool requerido.
-[Alto] ¿Cómo debuggeas “WebSocket se cae con cluster”?	Round-robin rompe sticky; necesitas `sticky` (mismo cliente → mismo worker) o Redis adapter para pub/sub entre workers.
-[Alto] ¿Cómo debuggeas “mi app con cluster va igual y consume 4× RAM”?	Cada worker duplica V8 y heap; si el cuello es DB/red, más workers no ayudan — perfila con `clinic`/`autocannon`, considera worker o caché.
-[Alto] ¿Qué pasa si creas workers > `availableParallelism()` sin pool?	Thrashing por context switch, cola infinita, latencia peor. Pool con `maxThreads` y `maxQueue` evita.
+[Alto] ¿Qué busca el entrevistador con “mi app con cluster va igual y consume 4× RAM”?	Que sepas que cada worker duplica V8; si el cuello es DB/red, más workers no ayudan — perfila, no añadas cores a ciegas.
+[Alto] ¿Qué busca con “WebSocket se cae con cluster”?	Que menciones sticky sessions o Redis adapter — round-robin rompe stateful.
+[Alto] ¿Qué error delata “Cluster crea hilos”?	Confundir procesos (cluster, memoria aislada) con hilos (worker_threads, SharedArrayBuffer) — te cazan con `isPrimary` vs `isMainThread`.
+[Alto] ¿Cómo sabes si estás listo para la entrevista sin releer la guía?	Sin docs, escribe `cluster-hello.js` de memoria, crea un Worker que duplica, decide cluster/worker/nada en 30s y dibuja primary/workers (ver Criterio de preparación en 06).
